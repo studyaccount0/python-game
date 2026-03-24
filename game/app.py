@@ -24,8 +24,11 @@ if 'bet_amount' not in st.session_state: st.session_state.bet_amount = 10000
 # --- [스테이지 1: 인트로] ---
 if not st.session_state.game_started:
     st.markdown("<h1 style='text-align:center; color:white;'>JAEGUK LIVE CASINO</h1>", unsafe_allow_html=True)
-    try: st.video("game/intro.mp4")
-    except: st.warning("인트로 영상(game/intro.mp4)을 확인해주세요.")
+    try: 
+        # 자동 재생(autoplay) 및 음소거(muted) 설정 추가
+        st.video("game/intro.mp4", autoplay=True, muted=True)
+    except: 
+        st.warning("인트로 영상(game/intro.mp4)을 확인해주세요.")
     
     if st.button("🧧 라이브 스튜디오 입장", use_container_width=True):
         st.session_state.game_started = True
@@ -33,15 +36,18 @@ if not st.session_state.game_started:
 
 # --- [스테이지 2: 메인 게임] ---
 else:
-    # CSS 설정 (f-string 대신 일반 문자열 사용하여 중괄호 에러 원천 차단)
+    # CSS 설정 (에러 방지를 위해 일반 문자열 처리)
     css_content = """
         <style>
         [data-testid="stAppViewContainer"] { overflow: hidden !important; background-color: #000; }
         [data-testid="stHeader"] { display: none; }
+        
+        /* 베팅 금액 슬라이더 위치 하향 조정 (310px -> 340px) */
         .stSlider {
-            position: fixed !important; top: 310px !important; left: 50% !important;
+            position: fixed !important; top: 340px !important; left: 50% !important;
             transform: translateX(-50%) !important; width: 350px !important; z-index: 100 !important;
         }
+        
         .withdraw-info {
             position: fixed; top: 20px; left: 20px; padding: 12px;
             background: rgba(0,0,0,0.8); color: #fbbf24; border: 2px solid #fbbf24;
@@ -96,11 +102,9 @@ else:
     """
     st.markdown(css_content, unsafe_allow_html=True)
 
-    # 딜러 이미지 출력
     if dealer_img:
         st.markdown('<img src="data:image/jpg;base64,' + dealer_img + '" class="dealer-photo">', unsafe_allow_html=True)
 
-    # 배경음악
     st.components.v1.html('<iframe width="0" height="0" src="https://www.youtube.com/embed/fZZS8GZStUw?autoplay=1&loop=1&playlist=fZZS8GZStUw" frameborder="0" allow="autoplay"></iframe>', height=0)
 
     msg_h, bal_h, card_h = st.empty(), st.empty(), st.empty()
@@ -127,19 +131,16 @@ else:
             time.sleep(1)
         st.rerun()
     else:
-        # 베팅 처리
         now_bet = st.session_state.bet_amount
         st.session_state.balance -= now_bet
         msg_h.markdown("<div class='status-ui' style='color:#ff5252;'>베팅 마감!</div>", unsafe_allow_html=True)
         time.sleep(1)
 
-        # 카드 섞기
         deck = [s + r for s in ['♠️','♥️','♣️','♦️'] for r in ['A','2','3','4','5','6','7','8','9','10','J','Q','K']]
         random.shuffle(deck)
         p_cards = [deck.pop(), deck.pop()]
         b_cards = [deck.pop(), deck.pop()]
 
-        # 카드 애니메이션
         curr_p, curr_b = [], []
         for i in range(2):
             curr_p.append(p_cards[i])
