@@ -3,7 +3,7 @@ import random
 import time
 import base64
 
-# 1. 페이지 설정 및 스크롤 차단
+# 1. 페이지 설정 및 스크롤 완전 차단
 st.set_page_config(page_title="재국 라이브 스튜디오", page_icon="🎰", layout="wide")
 
 # 2. 이미지 베이스64 (딜러 사진)
@@ -18,7 +18,6 @@ dealer_base64 = get_base64_img("game/dealer.jpg") #
 # 3. 게임 상태 초기화
 if 'game_started' not in st.session_state: st.session_state.game_started = False
 if 'balance' not in st.session_state: st.session_state.balance = 100000
-if 'history' not in st.session_state: st.session_state.history = []
 if 'bet_placed' not in st.session_state: st.session_state.bet_placed = None
 
 # --- [스테이지 1: 인트로 영상 & 실행 버튼] ---
@@ -33,7 +32,7 @@ if not st.session_state.game_started:
 
 # --- [스테이지 2: 메인 게임 스튜디오] ---
 else:
-    # 핵심 CSS: 카드 속도 둔화 및 버튼 위치 하향 조정
+    # 핵심 CSS: 카드 속도 1.4s로 둔화 및 버튼 위치 하향(610px)
     st.markdown(f"""
         <style>
         [data-testid="stAppViewContainer"] {{ overflow: hidden !important; background-color: #000; }}
@@ -47,46 +46,46 @@ else:
         }}
         .dealer-photo {{
             position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
-            width: 155px; border: 3px solid #fbbf24; border-radius: 12px;
+            width: 150px; border: 3px solid #fbbf24; border-radius: 12px;
             z-index: 10; box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
         }}
         .status-ui {{
-            position: fixed; top: 190px; left: 50%; transform: translateX(-50%);
+            position: fixed; top: 185px; left: 50%; transform: translateX(-50%);
             width: 100%; text-align: center; font-size: 52px; font-weight: bold;
             color: #fbbf24; text-shadow: 3px 3px 10px #000; z-index: 20;
         }}
         .balance-ui {{
-            position: fixed; top: 270px; left: 50%; transform: translateX(-50%);
+            position: fixed; top: 265px; left: 50%; transform: translateX(-50%);
             width: 100%; text-align: center; font-size: 45px; font-weight: bold;
             color: #ffffff; text-shadow: 2px 2px 8px #000; z-index: 25;
         }}
         
         /* 카드 구역 */
         .card-container {{
-            position: fixed; top: 345px; left: 50%; transform: translateX(-50%);
+            position: fixed; top: 340px; left: 50%; transform: translateX(-50%);
             display: flex; gap: 90px; z-index: 50;
         }}
-        .card-box {{ font-size: 85px; text-align: center; font-weight: bold; }}
+        .card-box {{ font-size: 90px; text-align: center; font-weight: bold; }}
         
-        /* 카드 애니메이션 속도 조절 (0.6s -> 1.0s로 변경하여 더 천천히) */
+        /* 카드 애니메이션 속도 조절 (더 천천히: 1.4s) */
         .card-anim {{
             display: inline-block;
-            animation: deal-card 1.0s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            animation: deal-card 1.4s cubic-bezier(0.175, 0.885, 0.32, 1) forwards;
             filter: drop-shadow(5px 5px 12px rgba(0,0,0,0.6));
         }}
         
         @keyframes deal-card {{
-            0% {{ transform: translate(400px, -400px) rotate(220deg) scale(0); opacity: 0; }}
+            0% {{ transform: translate(500px, -400px) rotate(220deg) scale(0); opacity: 0; }}
             100% {{ transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }}
         }}
 
-        /* 버튼 위치 하향 조정 (top: 550px -> 580px) */
+        /* 버튼 위치 더 아래로 조정 (top: 610px) */
         div[data-testid="stHorizontalBlock"] {{
-            position: fixed !important; top: 580px !important; left: 50% !important;
+            position: fixed !important; top: 610px !important; left: 50% !important;
             transform: translateX(-50%) !important; width: 80% !important; z-index: 1000 !important;
         }}
         .stButton > button {{
-            background-color: rgba(0, 0, 0, 0.8) !important;
+            background-color: rgba(0, 0, 0, 0.85) !important;
             color: white !important; border: 2.5px solid #fbbf24 !important;
             height: 85px !important; font-size: 26px !important; font-weight: bold !important;
             border-radius: 20px !important;
@@ -107,7 +106,7 @@ else:
     if st.session_state.bet_placed is None:
         bal_holder.markdown(f"<div class='balance-ui'>💰 잔액: {st.session_state.balance:,}원</div>", unsafe_allow_html=True)
         
-        # 버튼 한글화 및 레이아웃
+        # 버튼 한글화 (위치 610px 고정)
         c1, c2, c3 = st.columns(3)
         with c1:
             if st.button("👤 플레이어", use_container_width=True):
@@ -134,19 +133,19 @@ else:
         p_cards, b_cards = [deck.pop(), deck.pop()], [deck.pop(), deck.pop()]
 
         current_p, current_b = [], []
-        # 카드 딜링 간격도 1.2s -> 1.5s로 조금 더 여유 있게
+        # 카드 한 장씩 날아오는 쫄깃한 간격 (1.8s)
         for i in range(2):
             current_p.append(p_cards[i])
             p_h = "".join([f"<span class='card-anim'>{c}</span>" for c in current_p])
             b_h = "".join([f"<span class='card-anim'>{c}</span>" for c in current_b])
             card_holder.markdown(f"<div class='card-container'><div class='card-box' style='color:#ff5252;'>P<br>{p_h}</div><div class='card-box' style='color:#448aff;'>B<br>{b_h}</div></div>", unsafe_allow_html=True)
-            time.sleep(1.5)
+            time.sleep(1.8)
 
             current_b.append(b_cards[i])
             p_h = "".join([f"<span class='card-anim'>{c}</span>" for c in current_p])
             b_h = "".join([f"<span class='card-anim'>{c}</span>" for c in current_b])
             card_holder.markdown(f"<div class='card-container'><div class='card-box' style='color:#ff5252;'>P<br>{p_h}</div><div class='card-box' style='color:#448aff;'>B<br>{b_h}</div></div>", unsafe_allow_html=True)
-            time.sleep(1.5)
+            time.sleep(1.8)
 
         # 승패 판정
         def get_score(h): return sum([1 if c[2:]=='A' else (0 if c[2:] in ['10','J','Q','K'] else int(c[2:])) for c in h]) % 10
