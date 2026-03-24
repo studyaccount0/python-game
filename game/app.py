@@ -25,7 +25,6 @@ if 'bet_amount' not in st.session_state: st.session_state.bet_amount = 10000
 if not st.session_state.game_started:
     st.markdown("<h1 style='text-align:center; color:white;'>JAEGUK LIVE CASINO</h1>", unsafe_allow_html=True)
     try: 
-        # 자동 재생(autoplay) 및 음소거(muted) 설정 추가
         st.video("game/intro.mp4", autoplay=True, muted=True)
     except: 
         st.warning("인트로 영상(game/intro.mp4)을 확인해주세요.")
@@ -36,17 +35,20 @@ if not st.session_state.game_started:
 
 # --- [스테이지 2: 메인 게임] ---
 else:
-    # CSS 설정 (에러 방지를 위해 일반 문자열 처리)
+    # CSS 설정 (슬라이더 위치 및 색상 커스텀)
     css_content = """
         <style>
         [data-testid="stAppViewContainer"] { overflow: hidden !important; background-color: #000; }
         [data-testid="stHeader"] { display: none; }
         
-        /* 베팅 금액 슬라이더 위치 하향 조정 (310px -> 340px) */
+        /* 슬라이더 위치 추가 하향(380px) 및 색상 변경 */
         .stSlider {
-            position: fixed !important; top: 340px !important; left: 50% !important;
+            position: fixed !important; top: 380px !important; left: 50% !important;
             transform: translateX(-50%) !important; width: 350px !important; z-index: 100 !important;
         }
+        /* 슬라이더 핸들 및 트랙 색상을 황금색으로 변경 */
+        div[data-baseweb="slider"] div { background-color: #fbbf24 !important; }
+        div[data-testid="stThumbValue"] { color: #fbbf24 !important; font-weight: bold !important; }
         
         .withdraw-info {
             position: fixed; top: 20px; left: 20px; padding: 12px;
@@ -75,7 +77,7 @@ else:
             color: white; z-index: 25;
         }
         .card-container {
-            position: fixed; top: 370px; left: 50%; transform: translateX(-50%);
+            position: fixed; top: 400px; left: 50%; transform: translateX(-50%);
             display: flex; gap: 80px; z-index: 50;
         }
         .card-box { font-size: 80px; text-align: center; font-weight: bold; }
