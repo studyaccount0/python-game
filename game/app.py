@@ -33,14 +33,14 @@ if not st.session_state.game_started:
 
 # --- [스테이지 2: 메인 게임] ---
 else:
-    # CSS (f-string을 쓰지 않아 에러 발생 소지 차단)
-    st.markdown("""
+    # CSS 설정 (f-string 대신 일반 문자열 사용하여 중괄호 에러 원천 차단)
+    css_content = """
         <style>
         [data-testid="stAppViewContainer"] { overflow: hidden !important; background-color: #000; }
         [data-testid="stHeader"] { display: none; }
         .stSlider {
             position: fixed !important; top: 310px !important; left: 50% !important;
-            transform: translateX(-50%) !important; width: 300px !important; z-index: 100 !important;
+            transform: translateX(-50%) !important; width: 350px !important; z-index: 100 !important;
         }
         .withdraw-info {
             position: fixed; top: 20px; left: 20px; padding: 12px;
@@ -82,7 +82,7 @@ else:
             100% { transform: translate(0, 0) scale(1); opacity: 1; }
         }
         div[data-testid="stHorizontalBlock"] {
-            position: fixed !important; top: 600px !important; left: 50% !important;
+            position: fixed !important; top: 610px !important; left: 50% !important;
             transform: translateX(-50%) !important; width: 85% !important; z-index: 1000 !important;
         }
         .stButton > button {
@@ -93,11 +93,12 @@ else:
         </style>
         <div class="casino-bg"></div>
         <div class="withdraw-info">💰 100만원 달성 시 출금 가능</div>
-    """, unsafe_allow_html=True)
+    """
+    st.markdown(css_content, unsafe_allow_html=True)
 
     # 딜러 이미지 출력
     if dealer_img:
-        st.markdown(f'<img src="data:image/jpg;base64,{dealer_img}" class="dealer-photo">', unsafe_allow_html=True)
+        st.markdown('<img src="data:image/jpg;base64,' + dealer_img + '" class="dealer-photo">', unsafe_allow_html=True)
 
     # 배경음악
     st.components.v1.html('<iframe width="0" height="0" src="https://www.youtube.com/embed/fZZS8GZStUw?autoplay=1&loop=1&playlist=fZZS8GZStUw" frameborder="0" allow="autoplay"></iframe>', height=0)
@@ -105,25 +106,24 @@ else:
     msg_h, bal_h, card_h = st.empty(), st.empty(), st.empty()
 
     if st.session_state.bet_placed is None:
-        bal_h.markdown(f"<div class='balance-ui'>잔액: {st.session_state.balance:,}원</div>", unsafe_allow_html=True)
+        bal_h.markdown("<div class='balance-ui'>잔액: " + format(st.session_state.balance, ',') + "원</div>", unsafe_allow_html=True)
         
-        # 베팅 금액 조절 슬라이더
         m_bet = max(1000, st.session_state.balance)
         st.session_state.bet_amount = st.slider("BET", 1000, m_bet, value=min(st.session_state.bet_amount, m_bet), step=1000, label_visibility="collapsed")
         
         c1, c2, c3 = st.columns(3)
         with c1:
-            if st.button("👤 플레이어\n(2.0x)"):
+            if st.button("👤 플레이어\n(2.0x)", use_container_width=True):
                 st.session_state.bet_placed = "P"; st.rerun()
         with c2:
-            if st.button("👔 타이\n(8.0x)"):
+            if st.button("👔 타이\n(8.0x)", use_container_width=True):
                 st.session_state.bet_placed = "T"; st.rerun()
         with c3:
-            if st.button("🏦 뱅커\n(1.95x)"):
+            if st.button("🏦 뱅커\n(1.95x)", use_container_width=True):
                 st.session_state.bet_placed = "B"; st.rerun()
 
         for i in range(15, -1, -1):
-            msg_h.markdown(f"<div class='status-ui'>베팅 시간: {i}초</div>", unsafe_allow_html=True)
+            msg_h.markdown("<div class='status-ui'>베팅 시간: " + str(i) + "초</div>", unsafe_allow_html=True)
             time.sleep(1)
         st.rerun()
     else:
@@ -134,7 +134,7 @@ else:
         time.sleep(1)
 
         # 카드 섞기
-        deck = [f"{s}{r}" for s in ['♠️','♥️','♣️','♦️'] for r in ['A','2','3','4','5','6','7','8','9','10','J','Q','K']]
+        deck = [s + r for s in ['♠️','♥️','♣️','♦️'] for r in ['A','2','3','4','5','6','7','8','9','10','J','Q','K']]
         random.shuffle(deck)
         p_cards = [deck.pop(), deck.pop()]
         b_cards = [deck.pop(), deck.pop()]
@@ -143,19 +143,26 @@ else:
         curr_p, curr_b = [], []
         for i in range(2):
             curr_p.append(p_cards[i])
-            p_html = "".join([f"<span class='card-anim'>{c}</span>" for c in curr_p])
-            b_html = "".join([f"<span class='card-anim'>{c}</span>" for c in curr_b])
-            card_h.markdown(f"<div class='card-container'><div class='card-box' style='color:#ff5252;'>P<br>{p_html}</div><div class='card-box' style='color:#448aff;'>B<br>{b_html}</div></div>", unsafe_allow_html=True)
+            p_html = "".join(["<span class='card-anim'>" + c + "</span>" for c in curr_p])
+            b_html = "".join(["<span class='card-anim'>" + c + "</span>" for c in curr_b])
+            card_h.markdown("<div class='card-container'><div class='card-box' style='color:#ff5252;'>P<br>" + p_html + "</div><div class='card-box' style='color:#448aff;'>B<br>" + b_html + "</div></div>", unsafe_allow_html=True)
             time.sleep(1.2)
 
             curr_b.append(b_cards[i])
-            p_html = "".join([f"<span class='card-anim'>{c}</span>" for c in curr_p])
-            b_html = "".join([f"<span class='card-anim'>{c}</span>" for c in curr_b])
-            card_h.markdown(f"<div class='card-container'><div class='card-box' style='color:#ff5252;'>P<br>{p_html}</div><div class='card-box' style='color:#448aff;'>B<br>{b_html}</div></div>", unsafe_allow_html=True)
+            p_html = "".join(["<span class='card-anim'>" + c + "</span>" for c in curr_p])
+            b_html = "".join(["<span class='card-anim'>" + c + "</span>" for c in curr_b])
+            card_h.markdown("<div class='card-container'><div class='card-box' style='color:#ff5252;'>P<br>" + p_html + "</div><div class='card-box' style='color:#448aff;'>B<br>" + b_html + "</div></div>", unsafe_allow_html=True)
             time.sleep(1.2)
 
-        # 결과 계산
-        def score(h): return sum([1 if c[2:]=='A' else (0 if c[2:] in ['10','J','Q','K'] else int(c[2:])) for c in h]) % 10
+        def score(h):
+            s = 0
+            for c in h:
+                r = c[2:]
+                if r == 'A': s += 1
+                elif r in ['10','J','Q','K']: s += 0
+                else: s += int(r)
+            return s % 10
+            
         ps, bs = score(p_cards), score(b_cards)
         win = "T" if ps == bs else ("P" if ps > bs else "B")
         
@@ -163,9 +170,9 @@ else:
             rate = 2.0 if win == "P" else (1.95 if win == "B" else 8.0)
             prize = int(now_bet * rate)
             st.session_state.balance += prize
-            msg_h.markdown(f"<div class='status-ui' style='color:#4caf50;'>WIN! (+{prize:,}원)</div>", unsafe_allow_html=True)
+            msg_h.markdown("<div class='status-ui' style='color:#4caf50;'>WIN! (+" + format(prize, ',') + "원)</div>", unsafe_allow_html=True)
         else:
-            msg_h.markdown(f"<div class='status-ui' style='color:#9e9e9e;'>LOSE ({ps}:{bs})</div>", unsafe_allow_html=True)
+            msg_h.markdown("<div class='status-ui' style='color:#9e9e9e;'>LOSE (" + str(ps) + ":" + str(bs) + ")</div>", unsafe_allow_html=True)
         
         time.sleep(3)
         st.session_state.bet_placed = None
