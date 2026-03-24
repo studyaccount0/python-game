@@ -15,7 +15,7 @@ if 'balance' not in st.session_state:
 if not st.session_state.game_started:
     try:
         # 영상만 깔끔하게 출력
-        st.video("intro.mp4")
+        st.video("./game/intro.mp4")
     except:
         st.error("intro.mp4 파일을 확인해주세요.")
     
