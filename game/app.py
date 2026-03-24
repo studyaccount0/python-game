@@ -87,3 +87,70 @@ else:
 
         st.session_state.balance -= bet_amt
         suits = ['♠️', '♥️', '♣️', '♦️']
+        ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K']
+        deck = [f"{s}{r}" for s in suits for r in ranks]
+        random.shuffle(deck)
+
+        p_cards = [deck.pop(), deck.pop()]
+        b_cards = [deck.pop(), deck.pop()]
+        
+        # 단순 점수 계산 (바카라 룰)
+        def get_s(cards):
+            s = 0
+            for c in cards:
+                v = c[2:]
+                if v in ['J','Q','K','10']: s += 0
+                elif v == 'A': s += 1
+                else: s += int(v)
+            return s % 10
+
+        ps, bs = get_s(p_cards), get_s(b_cards)
+        
+        # 카드 공개 애니메이션 연출
+        with st.spinner("카드를 오픈합니다..."):
+            time.sleep(1)
+            with p_space:
+                st.subheader(f"PLAYER: {ps}")
+                st.markdown(f"<div class='card-display'>{' '.join(p_cards)}</div>", unsafe_allow_html=True)
+            with b_space:
+                st.subheader(f"BANKER: {bs}")
+                st.markdown(f"<div class='card-display'>{' '.join(b_cards)}</div>", unsafe_allow_html=True)
+
+        # 결과 판정
+        res = "T" if ps == bs else ("P" if ps > bs else "B")
+        st.session_state.history.append(res)
+        
+        if (target == "PLAYER" and res == "P"):
+            st.session_state.balance += bet_amt * 2
+            st.balloons()
+        elif (target == "BANKER" and res == "B"):
+            st.session_state.balance += int(bet_amt * 1.95)
+            st.balloons()
+        elif (target == "TIE" and res == "T"):
+            st.session_state.balance += bet_amt * 9
+            st.balloons()
+        
+        time.sleep(2)
+        st.rerun()
+
+    with col1:
+        if st.button(f"👤 PLAYER\n(2.0x)", use_container_width=True, key="p_btn"):
+            play_game("PLAYER")
+    with col2:
+        if st.button(f"👔 TIE\n(9.0x)", use_container_width=True, key="t_btn"):
+            play_game("TIE")
+    with col3:
+        if st.button(f"🏦 BANKER\n(1.95x)", use_container_width=True, key="b_btn", type="primary"):
+            play_game("BANKER")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # 4. 우측 하단 기록지 (사진의 전 결과들)
+    history_html = "<div class='score-board'><b>LOG</b><br>"
+    for r in st.session_state.history[-15:]:
+        color = "#e74c3c" if r == "P" else ("#3498db" if r == "B" else "#2ecc71")
+        history_html += f"<span class='dot' style='background:{color}'>{r}</span>"
+    history_html += "</div>"
+    st.markdown(history_html, unsafe_allow_html=True)
+
+    # 사이드바 충전
+    st.sidebar.button("💰 10만 원 충전", on_click=lambda: st.session_state.update(balance=100000))
