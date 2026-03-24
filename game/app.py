@@ -13,7 +13,7 @@ def get_base64_img(path):
             return base64.b64encode(f.read()).decode()
     except: return ""
 
-dealer_base64 = get_base64_img("game/dealer.jpg") #
+dealer_base64 = get_base64_img("game/dealer.jpg")
 
 # 3. 게임 상태 초기화
 if 'game_started' not in st.session_state: st.session_state.game_started = False
@@ -23,7 +23,7 @@ if 'bet_placed' not in st.session_state: st.session_state.bet_placed = None
 # --- [스테이지 1: 인트로 영상 & 실행 버튼] ---
 if not st.session_state.game_started:
     st.markdown("<h1 style='text-align:center; color:white;'>JAEGUK LIVE CASINO</h1>", unsafe_allow_html=True)
-    try: st.video("game/intro.mp4") #
+    try: st.video("game/intro.mp4")
     except: st.warning("인트로 영상을 확인해주세요.")
     
     if st.button("🧧 라이브 스튜디오 입장 (BGM ON)", use_container_width=True):
@@ -32,12 +32,22 @@ if not st.session_state.game_started:
 
 # --- [스테이지 2: 메인 게임 스튜디오] ---
 else:
-    # 핵심 CSS: 카드 속도 1.4s로 둔화 및 버튼 위치 하향(610px)
+    # 핵심 CSS: 왼쪽 상단 출금 안내 박스 스타일 추가
     st.markdown(f"""
         <style>
         [data-testid="stAppViewContainer"] {{ overflow: hidden !important; background-color: #000; }}
         [data-testid="stHeader"] {{ display: none; }}
         
+        /* [추가] 왼쪽 상단 출금 안내 문구 */
+        .withdraw-info {{
+            position: fixed; top: 20px; left: 20px;
+            padding: 12px 18px; background: rgba(0, 0, 0, 0.75);
+            color: #fbbf24; border: 2px solid #fbbf24; border-radius: 10px;
+            font-size: 16px; font-weight: bold; z-index: 100;
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+            line-height: 1.4;
+        }}
+
         .casino-bg {{
             position: fixed; top: 0; left: 0; width: 100%; height: 780px;
             background: radial-gradient(circle, #d32f2f 0%, #1a0000 100%);
@@ -60,14 +70,12 @@ else:
             color: #ffffff; text-shadow: 2px 2px 8px #000; z-index: 25;
         }}
         
-        /* 카드 구역 */
         .card-container {{
             position: fixed; top: 340px; left: 50%; transform: translateX(-50%);
             display: flex; gap: 90px; z-index: 50;
         }}
         .card-box {{ font-size: 90px; text-align: center; font-weight: bold; }}
         
-        /* 카드 애니메이션 속도 조절 (더 천천히: 1.4s) */
         .card-anim {{
             display: inline-block;
             animation: deal-card 1.4s cubic-bezier(0.175, 0.885, 0.32, 1) forwards;
@@ -79,7 +87,6 @@ else:
             100% {{ transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }}
         }}
 
-        /* 버튼 위치 더 아래로 조정 (top: 610px) */
         div[data-testid="stHorizontalBlock"] {{
             position: fixed !important; top: 610px !important; left: 50% !important;
             transform: translateX(-50%) !important; width: 80% !important; z-index: 1000 !important;
@@ -93,10 +100,10 @@ else:
         </style>
         
         <div class="casino-bg"></div>
+        <div class="withdraw-info">📢 잔액 100만원 달성 시<br>즉시 출금 가능</div>
         <img src="data:image/jpg;base64,{dealer_base64}" class="dealer-photo">
     """, unsafe_allow_html=True)
 
-    # 사운드 실행
     st.components.v1.html("""<iframe width="0" height="0" src="https://www.youtube.com/embed/fZZS8GZStUw?autoplay=1&loop=1&playlist=fZZS8GZStUw" frameborder="0" allow="autoplay"></iframe>""", height=0)
 
     msg_holder = st.empty()
@@ -106,7 +113,6 @@ else:
     if st.session_state.bet_placed is None:
         bal_holder.markdown(f"<div class='balance-ui'>💰 잔액: {st.session_state.balance:,}원</div>", unsafe_allow_html=True)
         
-        # 버튼 한글화 (위치 610px 고정)
         c1, c2, c3 = st.columns(3)
         with c1:
             if st.button("👤 플레이어", use_container_width=True):
@@ -123,7 +129,6 @@ else:
             time.sleep(1)
         st.rerun()
     else:
-        # 베팅 마감 후 카드 딜링 연출
         st.session_state.balance -= 10000
         msg_holder.markdown("<div class='status-ui' style='color:#ff5252;'>베팅 마감!</div>", unsafe_allow_html=True)
         time.sleep(1)
@@ -133,7 +138,6 @@ else:
         p_cards, b_cards = [deck.pop(), deck.pop()], [deck.pop(), deck.pop()]
 
         current_p, current_b = [], []
-        # 카드 한 장씩 날아오는 쫄깃한 간격 (1.8s)
         for i in range(2):
             current_p.append(p_cards[i])
             p_h = "".join([f"<span class='card-anim'>{c}</span>" for c in current_p])
@@ -147,7 +151,6 @@ else:
             card_holder.markdown(f"<div class='card-container'><div class='card-box' style='color:#ff5252;'>P<br>{p_h}</div><div class='card-box' style='color:#448aff;'>B<br>{b_h}</div></div>", unsafe_allow_html=True)
             time.sleep(1.8)
 
-        # 승패 판정
         def get_score(h): return sum([1 if c[2:]=='A' else (0 if c[2:] in ['10','J','Q','K'] else int(c[2:])) for c in h]) % 10
         ps, bs = get_score(p_cards), get_score(b_cards)
         res = "T" if ps == bs else ("P" if ps > bs else "B")
