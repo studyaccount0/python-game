@@ -1,156 +1,177 @@
 import streamlit as st
 import random
 import time
+import os
 
-# 1. 페이지 설정 (넓은 화면 모드)
-st.set_page_config(page_title="재국 라이브 카지노", page_icon="🎰", layout="wide")
+# 1. 페이지 설정
+st.set_page_config(page_title="JAEGOOK LIVE CASINO", page_icon="🧧", layout="wide")
 
-# 2. 게임 상태 초기화
-if 'balance' not in st.session_state:
-    st.session_state.balance = 100000
-if 'history' not in st.session_state:
-    st.session_state.history = []
-if 'game_started' not in st.session_state:
-    st.session_state.game_started = False
+# 2. 상태 초기화
+if 'balance' not in st.session_state: st.session_state.balance = 100000
+if 'history' not in st.session_state: st.session_state.history = []
+if 'game_started' not in st.session_state: st.session_state.game_started = False
+if 'bet_placed' not in st.session_state: st.session_state.bet_placed = None
+if 'current_bet' not in st.session_state: st.session_state.current_bet = 0
 
-# 3. 사진과 똑같은 레이아웃을 위한 CSS
+# 3. 사진과 흡사한 라이브 UI 전용 CSS
 st.markdown("""
     <style>
-    .main { background-color: #0d0d0d; }
-    /* 중앙 딜러 테이블 */
-    .casino-floor {
-        background: radial-gradient(circle, #a52a2a 0%, #3d0000 100%);
-        border-radius: 50% / 20%;
-        padding: 50px;
-        border: 8px solid #5d4037;
-        text-align: center;
-        position: relative;
-        min-height: 400px;
-        margin-bottom: 20px;
+    .main { background-color: #050505; }
+    /* 상단 테이블 & 딜러 */
+    .live-studio {
+        background: radial-gradient(circle, #8b0000 0%, #200000 100%);
+        border-bottom: 5px solid #d4af37;
+        height: 450px; position: relative; text-align: center;
+        border-radius: 0 0 50% 50% / 0 0 20% 20%;
     }
-    .dealer-box { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); }
-    .card-display { font-size: 70px; margin: 10px; animation: flip 0.5s ease-in-out; display: inline-block; }
-    @keyframes flip { from { transform: rotateY(90deg); } to { transform: rotateY(0deg); } }
+    .dealer-img { width: 200px; margin-top: 20px; border-radius: 50%; border: 3px solid #d4af37; }
     
-    /* 하단 베팅 구역 */
-    .bet-zone { background: #1a1a1a; padding: 20px; border-radius: 15px; border-top: 3px solid #f1c40f; }
-    .bet-btn { height: 100px !important; font-size: 20px !important; }
+    /* 베팅 타이머 */
+    .timer-text { font-size: 40px; color: #ff0000; font-weight: bold; text-shadow: 0 0 10px #ff0000; }
     
-    /* 우측 하단 기록지(스코어보드) */
-    .score-board {
-        position: fixed; bottom: 20px; right: 20px;
-        background: rgba(0,0,0,0.8); padding: 10px; border-radius: 10px;
-        border: 1px solid #444; width: 250px; z-index: 100;
+    /* 하단 베팅 구역 (사진 UI 재현) */
+    .bet-container {
+        position: fixed; bottom: 0; left: 0; right: 0;
+        background: rgba(20, 20, 20, 0.95); padding: 20px;
+        border-top: 2px solid #444; display: flex; justify-content: center; gap: 10px;
     }
-    .dot { display: inline-block; width: 20px; height: 20px; border-radius: 50%; margin: 2px; text-align: center; font-size: 12px; color: white; line-height: 20px; }
+    .bet-card {
+        border: 2px solid #555; border-radius: 10px; padding: 15px; text-align: center;
+        min-width: 150px; transition: 0.3s; cursor: pointer;
+    }
+    .bet-card:hover { border-color: #f1c40f; background: rgba(241, 196, 15, 0.1); }
+    .bet-p { color: #e74c3c; font-weight: bold; }
+    .bet-b { color: #3498db; font-weight: bold; }
+    .bet-t { color: #2ecc71; font-weight: bold; }
+
+    /* 우측 하단 기록지 */
+    .roadmap {
+        position: fixed; bottom: 120px; right: 20px;
+        background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px;
+        display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px;
+    }
+    .road-dot { width: 18px; height: 18px; border-radius: 50%; font-size: 10px; text-align: center; line-height: 18px; color: white; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- [인트로: 영상] ---
+# 4. 배경음악(BGM) 추가
+# 긴장감 있는 루프 음악 (유튜브 라이브 카지노 느낌)
+st.markdown("""
+    <iframe src="https://www.youtube.com/embed/fZZS8GZStUw?autoplay=1&loop=1&playlist=fZZS8GZStUw" 
+    width="0" height="0" frameborder="0" allow="autoplay"></iframe>
+    """, unsafe_allow_html=True)
+
+# --- [인트로 화면] ---
 if not st.session_state.game_started:
     st.video("game/intro.mp4")
-    if st.button("🔥 카지노 입장 (GAME START)", use_container_width=True):
+    if st.button("🧧 카지노 입장하기 (ENTER STUDIO)", use_container_width=True):
         st.session_state.game_started = True
         st.rerun()
 
-# --- [메인: 라이브 카지노] ---
+# --- [메인 라이브 화면] ---
 else:
-    # 1. 상단 테이블 (딜러와 카드)
-    st.markdown("<div class='casino-floor'>", unsafe_allow_html=True)
-    col_d1, col_d2, col_d3 = st.columns([1, 2, 1])
-    with col_d2:
-        try:
-            st.image("game/dealer.jpg", width=250) # 중앙에 앉아있는 딜러
-        except:
-            st.write("👤 [딜러 대기 중]")
+    # 1. 라이브 스튜디오 (상단)
+    st.markdown("<div class='live-studio'>", unsafe_allow_html=True)
+    try:
+        st.image("game/dealer.jpg", width=220)
+    except:
+        st.write("👤 [딜러 입장 중...]")
     
-    # 카드 출력 공간 (베팅 후 나타남)
-    p_space, b_space = st.columns(2)
+    # 베팅 타이머 표시
+    timer_placeholder = st.empty()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 2. 정보 바
-    st.markdown(f"<h2 style='text-align:center;'>💰 잔액: {st.session_state.balance:,}원</h2>", unsafe_allow_html=True)
-
-    # 3. 하단 베팅 존 (사진처럼 배수 표시 및 클릭 베팅)
-    st.markdown("<div class='bet-zone'>", unsafe_allow_html=True)
+    # 2. 게임 영역 (카드 오픈 시 사용)
+    card_col1, card_col2 = st.columns(2)
     
-    # 베팅 금액 설정
-    bet_amt = st.select_slider("베팅 금액 선택", options=[1000, 5000, 10000, 50000, 100000], value=1000)
-    
-    col1, col2, col3 = st.columns(3)
-    
-    # 게임 로직 함수
-    def play_game(target):
-        if st.session_state.balance < bet_amt:
-            st.error("잔액이 부족합니다!")
-            return
+    # 3. 우측 하단 기록지 (사진 UI)
+    road_html = "<div class='roadmap'>"
+    for r in st.session_state.history[-36:]:
+        color = "#e74c3c" if r == "P" else ("#3498db" if r == "B" else "#2ecc71")
+        road_html += f"<div class='road-dot' style='background:{color}'>{r}</div>"
+    road_html += "</div>"
+    st.markdown(road_html, unsafe_allow_html=True)
 
-        st.session_state.balance -= bet_amt
-        suits = ['♠️', '♥️', '♣️', '♦️']
-        ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K']
-        deck = [f"{s}{r}" for s in suits for r in ranks]
-        random.shuffle(deck)
-
-        p_cards = [deck.pop(), deck.pop()]
-        b_cards = [deck.pop(), deck.pop()]
+    # 4. 베팅 로직
+    if st.session_state.bet_placed is None:
+        # 10초 카운트다운 시작
+        for i in range(10, -1, -1):
+            timer_placeholder.markdown(f"<p class='timer-text' style='text-align:center;'>PLACE YOUR BETS: {i}s</p>", unsafe_allow_html=True)
+            if i == 0:
+                timer_placeholder.markdown("<p class='timer-text' style='text-align:center;'>NO MORE BETS</p>", unsafe_allow_html=True)
+                time.sleep(1)
+            time.sleep(1)
         
-        # 단순 점수 계산 (바카라 룰)
-        def get_s(cards):
+        # 베팅이 안 되었을 경우 강제 재시작
+        st.warning("베팅 시간이 종료되었습니다! 다음 라운드를 기다려주세요.")
+        time.sleep(2)
+        st.rerun()
+
+    else:
+        # 베팅 완료 후 카드 오픈 연출
+        timer_placeholder.markdown("<p class='timer-text' style='text-align:center; color:#f1c40f;'>DEALING...</p>", unsafe_allow_html=True)
+        
+        # 카드 셔플
+        deck = [f"{s}{r}" for s in ['♠️','♥️','♣️','♦️'] for r in ['A','2','3','4','5','6','7','8','9','10','J','Q','K']]
+        random.shuffle(deck)
+        p_hand, b_hand = [deck.pop(), deck.pop()], [deck.pop(), deck.pop()]
+        
+        def get_s(h):
             s = 0
-            for c in cards:
+            for c in h:
                 v = c[2:]
                 if v in ['J','Q','K','10']: s += 0
                 elif v == 'A': s += 1
                 else: s += int(v)
             return s % 10
 
-        ps, bs = get_s(p_cards), get_s(b_cards)
+        ps, bs = get_s(p_hand), get_s(b_hand)
         
-        # 카드 공개 애니메이션 연출
-        with st.spinner("카드를 오픈합니다..."):
-            time.sleep(1)
-            with p_space:
-                st.subheader(f"PLAYER: {ps}")
-                st.markdown(f"<div class='card-display'>{' '.join(p_cards)}</div>", unsafe_allow_html=True)
-            with b_space:
-                st.subheader(f"BANKER: {bs}")
-                st.markdown(f"<div class='card-display'>{' '.join(b_cards)}</div>", unsafe_allow_html=True)
+        with card_col1:
+            st.markdown(f"<h3 style='text-align:center; color:#e74c3c;'>PLAYER</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h1 style='text-align:center;'>{' '.join(p_hand)}</h1>", unsafe_allow_html=True)
+            st.markdown(f"<h2 style='text-align:center;'>{ps}</h2>", unsafe_allow_html=True)
+        with card_col2:
+            st.markdown(f"<h3 style='text-align:center; color:#3498db;'>BANKER</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h1 style='text-align:center;'>{' '.join(b_hand)}</h1>", unsafe_allow_html=True)
+            st.markdown(f"<h2 style='text-align:center;'>{bs}</h2>", unsafe_allow_html=True)
 
         # 결과 판정
         res = "T" if ps == bs else ("P" if ps > bs else "B")
         st.session_state.history.append(res)
         
-        if (target == "PLAYER" and res == "P"):
-            st.session_state.balance += bet_amt * 2
-            st.balloons()
-        elif (target == "BANKER" and res == "B"):
-            st.session_state.balance += int(bet_amt * 1.95)
-            st.balloons()
-        elif (target == "TIE" and res == "T"):
-            st.session_state.balance += bet_amt * 9
-            st.balloons()
-        
-        time.sleep(2)
+        if (st.session_state.bet_placed == "P" and res == "P"): st.session_state.balance += st.session_state.current_bet * 2; st.balloons()
+        elif (st.session_state.bet_placed == "B" and res == "B"): st.session_state.balance += int(st.session_state.current_bet * 1.95); st.balloons()
+        elif (st.session_state.bet_placed == "T" and res == "T"): st.session_state.balance += st.session_state.current_bet * 9; st.balloons()
+
+        # 3초 뒤 초기화
+        time.sleep(3)
+        st.session_state.bet_placed = None
         st.rerun()
 
-    with col1:
-        if st.button(f"👤 PLAYER\n(2.0x)", use_container_width=True, key="p_btn"):
-            play_game("PLAYER")
-    with col2:
-        if st.button(f"👔 TIE\n(9.0x)", use_container_width=True, key="t_btn"):
-            play_game("TIE")
-    with col3:
-        if st.button(f"🏦 BANKER\n(1.95x)", use_container_width=True, key="b_btn", type="primary"):
-            play_game("BANKER")
-    st.markdown("</div>", unsafe_allow_html=True)
+    # 5. 하단 고정 베팅 인터페이스 (사진 레이아웃)
+    st.markdown("---")
+    st.markdown(f"<h3 style='text-align:center;'>💰 자산: {st.session_state.balance:,}원</h3>", unsafe_allow_html=True)
+    
+    # 금액 선택 슬라이더
+    bet_amount = st.select_slider("베팅 칩 선택", options=[1000, 5000, 10000, 50000, 100000], value=1000)
 
-    # 4. 우측 하단 기록지 (사진의 전 결과들)
-    history_html = "<div class='score-board'><b>LOG</b><br>"
-    for r in st.session_state.history[-15:]:
-        color = "#e74c3c" if r == "P" else ("#3498db" if r == "B" else "#2ecc71")
-        history_html += f"<span class='dot' style='background:{color}'>{r}</span>"
-    history_html += "</div>"
-    st.markdown(history_html, unsafe_allow_html=True)
-
-    # 사이드바 충전
-    st.sidebar.button("💰 10만 원 충전", on_click=lambda: st.session_state.update(balance=100000))
+    b_col1, b_col2, b_col3 = st.columns(3)
+    with b_col1:
+        if st.button("👤 PLAYER\n2.0x", use_container_width=True):
+            st.session_state.bet_placed = "P"
+            st.session_state.current_bet = bet_amount
+            st.session_state.balance -= bet_amount
+            st.toast("플레이어 베팅 완료!")
+    with b_col2:
+        if st.button("👔 TIE\n9.0x", use_container_width=True):
+            st.session_state.bet_placed = "T"
+            st.session_state.current_bet = bet_amount
+            st.session_state.balance -= bet_amount
+            st.toast("타이 베팅 완료!")
+    with b_col3:
+        if st.button("🏦 BANKER\n1.95x", use_container_width=True, type="primary"):
+            st.session_state.bet_placed = "B"
+            st.session_state.current_bet = bet_amount
+            st.session_state.balance -= bet_amount
+            st.toast("뱅커 베팅 완료!")
