@@ -32,13 +32,11 @@ if not st.session_state.game_started:
 
 # --- [스테이지 2: 메인 게임 스튜디오] ---
 else:
-    # 핵심 CSS: 왼쪽 상단 출금 안내 박스 스타일 추가
     st.markdown(f"""
         <style>
         [data-testid="stAppViewContainer"] {{ overflow: hidden !important; background-color: #000; }}
         [data-testid="stHeader"] {{ display: none; }}
         
-        /* [추가] 왼쪽 상단 출금 안내 문구 */
         .withdraw-info {{
             position: fixed; top: 20px; left: 20px;
             padding: 12px 18px; background: rgba(0, 0, 0, 0.75);
@@ -51,7 +49,7 @@ else:
         .casino-bg {{
             position: fixed; top: 0; left: 0; width: 100%; height: 780px;
             background: radial-gradient(circle, #d32f2f 0%, #1a0000 100%);
-            border-bottom: 15px solid #3d2b1f; border-radius: 0 0 50% 50% / 0 0 10% 10%;
+            border-bottom: 15px solid #3d2b1f; border-radius: 0 0 50% / 0 0 10%;
             z-index: 1;
         }}
         .dealer-photo {{
@@ -94,8 +92,8 @@ else:
         .stButton > button {{
             background-color: rgba(0, 0, 0, 0.85) !important;
             color: white !important; border: 2.5px solid #fbbf24 !important;
-            height: 85px !important; font-size: 26px !important; font-weight: bold !important;
-            border-radius: 20px !important;
+            height: 100px !important; font-size: 22px !important; font-weight: bold !important;
+            border-radius: 20px !important; line-height: 1.2 !important;
         }}
         </style>
         
@@ -106,22 +104,20 @@ else:
 
     st.components.v1.html("""<iframe width="0" height="0" src="https://www.youtube.com/embed/fZZS8GZStUw?autoplay=1&loop=1&playlist=fZZS8GZStUw" frameborder="0" allow="autoplay"></iframe>""", height=0)
 
-    msg_holder = st.empty()
-    bal_holder = st.empty()
-    card_holder = st.empty()
+    msg_holder, bal_holder, card_holder = st.empty(), st.empty(), st.empty()
 
     if st.session_state.bet_placed is None:
         bal_holder.markdown(f"<div class='balance-ui'>💰 잔액: {st.session_state.balance:,}원</div>", unsafe_allow_html=True)
         
         c1, c2, c3 = st.columns(3)
         with c1:
-            if st.button("👤 플레이어", use_container_width=True):
+            if st.button("👤 플레이어\n(2.0배)", use_container_width=True):
                 st.session_state.bet_placed = "P"; st.rerun()
         with c2:
-            if st.button("👔 타이", use_container_width=True):
+            if st.button("👔 타이\n(8.0배)", use_container_width=True):
                 st.session_state.bet_placed = "T"; st.rerun()
         with c3:
-            if st.button("🏦 뱅커", use_container_width=True):
+            if st.button("🏦 뱅커\n(1.95배)", use_container_width=True):
                 st.session_state.bet_placed = "B"; st.rerun()
 
         for i in range(15, -1, -1):
@@ -129,7 +125,9 @@ else:
             time.sleep(1)
         st.rerun()
     else:
-        st.session_state.balance -= 10000
+        # 베팅 금액 설정 (기본 1만원)
+        bet_amount = 10000
+        st.session_state.balance -= bet_amount
         msg_holder.markdown("<div class='status-ui' style='color:#ff5252;'>베팅 마감!</div>", unsafe_allow_html=True)
         time.sleep(1)
 
@@ -140,25 +138,26 @@ else:
         current_p, current_b = [], []
         for i in range(2):
             current_p.append(p_cards[i])
-            p_h = "".join([f"<span class='card-anim'>{c}</span>" for c in current_p])
-            b_h = "".join([f"<span class='card-anim'>{c}</span>" for c in current_b])
-            card_holder.markdown(f"<div class='card-container'><div class='card-box' style='color:#ff5252;'>P<br>{p_h}</div><div class='card-box' style='color:#448aff;'>B<br>{b_h}</div></div>", unsafe_allow_html=True)
+            card_holder.markdown(f"<div class='card-container'><div class='card-box' style='color:#ff5252;'>P<br>{''.join([f'<span class=\"card-anim\">{c}</span>' for c in current_p])}</div><div class='card-box' style='color:#448aff;'>B<br>{''.join([f'<span class=\"card-anim\">{c}</span>' for c in current_b])}</div></div>", unsafe_allow_html=True)
             time.sleep(1.8)
 
             current_b.append(b_cards[i])
-            p_h = "".join([f"<span class='card-anim'>{c}</span>" for c in current_p])
-            b_h = "".join([f"<span class='card-anim'>{c}</span>" for c in current_b])
-            card_holder.markdown(f"<div class='card-container'><div class='card-box' style='color:#ff5252;'>P<br>{p_h}</div><div class='card-box' style='color:#448aff;'>B<br>{b_h}</div></div>", unsafe_allow_html=True)
+            card_holder.markdown(f"<div class='card-container'><div class='card-box' style='color:#ff5252;'>P<br>{''.join([f'<span class=\"card-anim\">{c}</span>' for c in current_p])}</div><div class='card-box' style='color:#448aff;'>B<br>{''.join([f'<span class=\"card-anim\">{c}</span>' for c in current_b])}</div></div>", unsafe_allow_html=True)
             time.sleep(1.8)
 
         def get_score(h): return sum([1 if c[2:]=='A' else (0 if c[2:] in ['10','J','Q','K'] else int(c[2:])) for c in h]) % 10
         ps, bs = get_score(p_cards), get_score(b_cards)
         res = "T" if ps == bs else ("P" if ps > bs else "B")
         
+        # [수정] 배당률에 따른 당첨금 계산 로직
         if st.session_state.bet_placed == res:
             st.balloons()
-            msg_holder.markdown(f"<div class='status-ui' style='color:#4caf50;'>WIN! ({ps}:{bs})</div>", unsafe_allow_html=True)
-            st.session_state.balance += 20000
+            if res == "P": win_money = bet_amount * 2
+            elif res == "B": win_money = bet_amount * 1.95
+            elif res == "T": win_money = bet_amount * 8
+            
+            st.session_state.balance += int(win_money)
+            msg_holder.markdown(f"<div class='status-ui' style='color:#4caf50;'>WIN! (+{int(win_money):,}원)</div>", unsafe_allow_html=True)
         else:
             msg_holder.markdown(f"<div class='status-ui' style='color:#9e9e9e;'>LOSE ({ps}:{bs})</div>", unsafe_allow_html=True)
         
