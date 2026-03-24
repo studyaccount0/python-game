@@ -29,7 +29,7 @@ st.markdown("""
 
 # --- [인트로 화면] ---
 if not st.session_state.game_started:
-    st.video("/Users/hvcfbbj/Desktop/python/game/intro.mp4")
+    st.video("intro.mp4")
     st.write("")
     if st.button("🎰 카지노 입장하기", use_container_width=True):
         st.session_state.game_started = True
