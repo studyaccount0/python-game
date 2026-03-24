@@ -35,20 +35,39 @@ if not st.session_state.game_started:
 
 # --- [스테이지 2: 메인 게임] ---
 else:
-    # CSS 설정 (슬라이더 위치 및 색상 커스텀)
+    # CSS 설정 (슬라이더를 검은색/황금색 테두리로 변경)
     css_content = """
         <style>
         [data-testid="stAppViewContainer"] { overflow: hidden !important; background-color: #000; }
         [data-testid="stHeader"] { display: none; }
         
-        /* 슬라이더 위치 추가 하향(380px) 및 색상 변경 */
+        /* 슬라이더 위치 및 블랙 디자인 적용 */
         .stSlider {
-            position: fixed !important; top: 380px !important; left: 50% !important;
-            transform: translateX(-50%) !important; width: 350px !important; z-index: 100 !important;
+            position: fixed !important; top: 385px !important; left: 50% !important;
+            transform: translateX(-50%) !important; width: 380px !important; z-index: 100 !important;
         }
-        /* 슬라이더 핸들 및 트랙 색상을 황금색으로 변경 */
-        div[data-baseweb="slider"] div { background-color: #fbbf24 !important; }
-        div[data-testid="stThumbValue"] { color: #fbbf24 !important; font-weight: bold !important; }
+        
+        /* 슬라이더 트랙(선)을 검은색으로 변경 */
+        div[data-baseweb="slider"] > div:first-child {
+            background: #111 !important; 
+            border: 1px solid #fbbf24 !important;
+            height: 12px !important;
+        }
+        
+        /* 슬라이더 핸들(동그라미) 디자인 */
+        div[data-baseweb="slider"] div[role="slider"] {
+            background-color: #000 !important;
+            border: 2px solid #fbbf24 !important;
+            box-shadow: 0 0 10px #fbbf24 !important;
+        }
+        
+        /* 현재 베팅 금액 텍스트 색상 */
+        div[data-testid="stThumbValue"] { 
+            color: #fff !important; 
+            font-size: 18px !important;
+            font-weight: bold !important; 
+            text-shadow: 1px 1px 5px #000 !important;
+        }
         
         .withdraw-info {
             position: fixed; top: 20px; left: 20px; padding: 12px;
