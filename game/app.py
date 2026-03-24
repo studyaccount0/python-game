@@ -3,116 +3,158 @@ import random
 import time
 
 # 1. 페이지 설정
-st.set_page_config(page_title="재국 바카라: 카지노", page_icon="💰")
+st.set_page_config(page_title="재국 럭셔리 카지노", page_icon="🃏", layout="wide")
 
-# 2. 게임 상태 및 자산 초기화
+# 2. 게임 상태 초기화
 if 'game_started' not in st.session_state:
     st.session_state.game_started = False
 if 'balance' not in st.session_state:
-    st.session_state.balance = 100000  # 초기 자금 10만원
+    st.session_state.balance = 100000
+if 'history' not in st.session_state:
+    st.session_state.history = []
+
+# 3. 고급스러운 카지노 스타일 (CSS)
+st.markdown("""
+    <style>
+    .main { background-color: #013220; }
+    .dealer-container { text-align: center; padding: 20px; }
+    .dealer-img { border-radius: 50%; border: 4px solid #f1c40f; box-shadow: 0 0 15px rgba(241, 196, 15, 0.6); }
+    .card-box { background: rgba(255,255,255,0.05); border-radius: 15px; padding: 20px; text-align: center; border: 1px solid #333; }
+    .card-display { font-size: 55px; display: inline-block; animation: flip 0.6s ease-in-out; margin: 5px; }
+    @keyframes flip { from { transform: rotateY(90deg); opacity: 0; } to { transform: rotateY(0deg); opacity: 1; } }
+    .score-circle { background: #f1c40f; color: black; border-radius: 50%; width: 45px; height: 45px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; font-size: 22px; margin-top: 10px; }
+    .history-dot { display: inline-block; width: 28px; height: 28px; border-radius: 50%; margin: 3px; text-align: center; font-size: 15px; font-weight: bold; line-height: 28px; color: white; box-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
+    </style>
+    """, unsafe_allow_html=True)
 
 # --- [인트로 화면] ---
 if not st.session_state.game_started:
-    try:
-        # 영상만 깔끔하게 출력
-        st.video("./game/intro.mp4")
-    except:
-        st.error("intro.mp4 파일을 확인해주세요.")
-    
+    st.video("intro.mp4")
     st.write("")
-    if st.button("🚀 게임 실행", use_container_width=True):
+    if st.button("🎰 카지노 입장하기", use_container_width=True):
         st.session_state.game_started = True
         st.rerun()
 
-# --- [바카라 게임 화면] ---
+# --- [메인 게임 화면] ---
 else:
-    st.markdown("""
-        <style>
-        .main { background-color: #064e3b; color: white; }
-        .stButton>button { width: 100%; font-weight: bold; border-radius: 10px; }
-        .balance-box { font-size: 24px; background-color: #f1c40f; color: black; padding: 10px; border-radius: 10px; text-align: center; font-weight: bold; margin-bottom: 20px; }
-        .card-val { font-size: 35px; font-weight: bold; color: #f1c40f; }
-        </style>
-        """, unsafe_allow_html=True)
+    # 딜러 이미지 노출 구역
+    st.markdown("<div class='dealer-container'>", unsafe_allow_html=True)
+    try:
+        # game 폴더 내의 dealer.jpg 호출
+        st.image("dealer.jpg", width=220)
+        st.markdown("<p style='color:#f1c40f; font-weight:bold;'>VVIP 전담 딜러</p>", unsafe_allow_html=True)
+    except:
+        st.warning("dealer.jpg 파일을 찾을 수 없습니다. 폴더 위치를 확인해주세요.")
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    # 상단 자산 표시
-    st.markdown(f"<div class='balance-box'>💰 현재 잔액: {st.session_state.balance:,}원</div>", unsafe_allow_html=True)
-    st.title("🎰 HIGH LIMIT BACCARAT")
+    st.markdown(f"<h2 style='text-align:center; color:white;'>💰 현재 잔액: {st.session_state.balance:,}원</h2>", unsafe_allow_html=True)
+    
+    # 스코어보드 (기록지)
+    if st.session_state.history:
+        st.write("📊 **최근 게임 로드맵**")
+        h_html = "<div>"
+        for res in st.session_state.history[-15:]:
+            color = "#e74c3c" if res == "P" else ("#3498db" if res == "B" else "#2ecc71")
+            h_html += f"<div class='history-dot' style='background:{color}'>{res}</div>"
+        h_html += "</div>"
+        st.markdown(h_html, unsafe_allow_html=True)
 
-    # 베팅 설정 구역 (들여쓰기 완벽 수정)
     st.write("---")
-    col_bet1, col_bet2 = st.columns([2, 1])
-    with col_bet1:
-        bet_target = st.radio("어디에 베팅하시겠습니까?", ["플레이어(2배)", "뱅커(1.95배)", "타이(9배)"], horizontal=True)
-    with col_bet2:
-        # 이 부분이 아까 에러가 났던 곳입니다. 들여쓰기와 괄호를 맞췄습니다.
-        bet_amount = st.number_input("베팅 금액", min_value=1000, max_value=st.session_state.balance, step=1000, value=1000)
 
-    # 카드 점수 계산 함수
-    def get_score(cards):
-        score = 0
-        for c in cards:
-            val = c.split()[1]
-            if val in ['J', 'Q', 'K', '10']: score += 0
-            elif val == 'A': score += 1
-            else: score += int(val)
-        return score % 10
+    # 베팅 설정
+    col_set1, col_set2 = st.columns([2, 1])
+    with col_set1:
+        bet_target = st.radio("어디에 거시겠습니까?", ["플레이어(2배)", "뱅커(1.95배)", "타이(9배)"], horizontal=True)
+    with col_set2:
+        bet_amount = st.number_input("베팅 금액 입력", min_value=1000, max_value=st.session_state.balance, step=5000, value=1000)
 
-    # 게임 실행 버튼
-    if st.button("🃏 DEAL (카드 뽑기)", type="primary"):
-        if st.session_state.balance < bet_amount:
-            st.error("잔액이 부족합니다!")
+    # 카드 계산 로직
+    def card_val(c):
+        r = c.split()[1]
+        if r in ['J', 'Q', 'K', '10']: return 0
+        if r == 'A': return 1
+        return int(r)
+
+    if st.button("🃏 CARDS OPEN", type="primary", use_container_width=True):
+        st.session_state.balance -= bet_amount
+        
+        suits = ['♠️', '♥️', '♣️', '♦️']
+        ranks = ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K']
+        deck = [f"{s} {r}" for s in suits for r in ranks]
+        random.shuffle(deck)
+
+        # 1단계: 각 2장씩 배분
+        p_hand = [deck.pop(), deck.pop()]
+        b_hand = [deck.pop(), deck.pop()]
+        
+        p_score = (card_val(p_hand[0]) + card_val(p_hand[1])) % 10
+        b_score = (card_val(b_hand[0]) + card_val(b_hand[1])) % 10
+
+        # 2단계: 바카라 3번째 카드 룰 적용
+        # 플레이어 0~5일 때 한 장 더
+        if p_score <= 5 and b_score < 8:
+            p_hand.append(deck.pop())
+            p_score = sum(card_val(c) for c in p_hand) % 10
+        
+        # 뱅커 0~5일 때 한 장 더 (간략화 룰)
+        if b_score <= 5 and p_score < 8:
+            b_hand.append(deck.pop())
+            b_score = sum(card_val(c) for c in b_hand) % 10
+
+        # 긴장감 넘치는 연출
+        progress_text = st.empty()
+        for i in range(3, 0, -1):
+            progress_text.subheader(f"딜러가 카드를 오픈합니다... {i}")
+            time.sleep(0.5)
+        progress_text.empty()
+
+        # 결과 화면 출력
+        res_p, res_b = st.columns(2)
+        with res_p:
+            st.markdown("<div class='card-box'>", unsafe_allow_html=True)
+            st.subheader("👤 PLAYER")
+            for c in p_hand:
+                st.markdown(f"<span class='card-display'>{c}</span>", unsafe_allow_html=True)
+                time.sleep(0.5)
+            st.markdown(f"<br><div class='score-circle'>{p_score}</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with res_b:
+            st.markdown("<div class='card-box'>", unsafe_allow_html=True)
+            st.subheader("🏦 BANKER")
+            for c in b_hand:
+                st.markdown(f"<span class='card-display'>{c}</span>", unsafe_allow_html=True)
+                time.sleep(0.5)
+            st.markdown(f"<br><div class='score-circle'>{b_score}</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        # 승패 판정
+        winner = ""
+        if p_score > b_score: 
+            winner = "플레이어(2배)"
+            st.session_state.history.append("P")
+        elif b_score > p_score: 
+            winner = "뱅커(1.95배)"
+            st.session_state.history.append("B")
+        else: 
+            winner = "타이(9배)"
+            st.session_state.history.append("T")
+
+        st.write("---")
+        if bet_target == winner:
+            rate = 2 if "플레이어" in winner else (1.95 if "뱅커" in winner else 9)
+            win_total = int(bet_amount * rate)
+            st.session_state.balance += win_total
+            st.balloons()
+            st.success(f"🎊 축하합니다! {win_total:,}원 당첨!")
         else:
-            # 베팅금 차감
-            st.session_state.balance -= bet_amount
-            
-            # 카드 덱 생성 및 셔플
-            suits = ['♠️', '♥️', '♣️', '♦️']
-            ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
-            deck = [f"{s} {r}" for s in suits for r in ranks]
-            random.shuffle(deck)
+            st.error(f"낙첨되었습니다. 결과: {winner.split('(')[0]}")
 
-            p_cards = [deck.pop(), deck.pop()]
-            b_cards = [deck.pop(), deck.pop()]
-            p_score = get_score(p_cards)
-            b_score = get_score(b_cards)
-
-            with st.spinner("딜링 중..."):
-                time.sleep(1)
-
-            c1, c2 = st.columns(2)
-            with c1:
-                st.subheader("👤 PLAYER")
-                st.write(f"### {' '.join(p_cards)}")
-                st.markdown(f"<p class='card-val'>{p_score}</p>", unsafe_allow_html=True)
-            with c2:
-                st.subheader("🏦 BANKER")
-                st.write(f"### {' '.join(b_cards)}")
-                st.markdown(f"<p class='card-val'>{b_score}</p>", unsafe_allow_html=True)
-
-            # 결과 판정
-            result = ""
-            if p_score > b_score: result = "플레이어(2배)"
-            elif b_score > p_score: result = "뱅커(1.95배)"
-            else: result = "타이(9배)"
-
-            st.write("---")
-            if bet_target == result:
-                if result == "플레이어(2배)": win_money = bet_amount * 2
-                elif result == "뱅커(1.95배)": win_money = int(bet_amount * 1.95)
-                else: win_money = bet_amount * 9
-                
-                st.session_state.balance += win_money
-                st.balloons()
-                st.success(f"축하합니다! 베팅 성공! {win_money:,}원을 획득하셨습니다.")
-            else:
-                st.error(f"아쉽습니다. 결과는 {result.split('(')[0]}입니다.")
-
-    # 사이드바 메뉴
-    st.sidebar.write(f"### 내 자산: {st.session_state.balance:,}원")
-    if st.sidebar.button("🏠 처음으로 돌아가기"):
-        st.session_state.game_started = False
-        st.rerun()
-    if st.sidebar.button("💸 자금 충전 (10만원)"):
+    # 사이드바
+    st.sidebar.markdown(f"### 💳 현재 자산: {st.session_state.balance:,}원")
+    if st.sidebar.button("💸 10만 원 즉시 충전"):
         st.session_state.balance = 100000
+        st.rerun()
+    if st.sidebar.button("🏠 처음 화면으로"):
+        st.session_state.game_started = False
         st.rerun()
