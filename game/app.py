@@ -29,7 +29,7 @@ st.markdown("""
 
 # --- [인트로 화면] ---
 if not st.session_state.game_started:
-    st.video("intro.mp4")
+    st.video("game/intro.mp4")
     st.write("")
     if st.button("🎰 카지노 입장하기", use_container_width=True):
         st.session_state.game_started = True
@@ -41,7 +41,7 @@ else:
     st.markdown("<div class='dealer-container'>", unsafe_allow_html=True)
     try:
         # game 폴더 내의 dealer.jpg 호출
-        st.image("/Users/hvcfbbj/Desktop/python/game/dealer.jpg", width=220)
+        st.image("game/dealer.jpg", width=220)
         st.markdown("<p style='color:#f1c40f; font-weight:bold;'>VVIP 전담 딜러</p>", unsafe_allow_html=True)
     except:
         st.warning("dealer.jpg 파일을 찾을 수 없습니다. 폴더 위치를 확인해주세요.")
