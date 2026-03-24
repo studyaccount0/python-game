@@ -44,4 +44,5 @@ else:
     with col_bet1:
         bet_target = st.radio("어디에 베팅하시겠습니까?", ["플레이어(2배)", "뱅커(1.95배)", "타이(9배)"], horizontal=True)
     with col_bet2:
-        bet_amount = st.number_input("베팅 금액", min_value=1000, max_value=st.session_state.balance, step=1000, value=1000
+        # 괄호가 두 번 닫혀야 합니다! 하나는 value용, 하나는 number_input용.
+bet_amount = st.number_input("베팅 금액", min_value=1000, max_value=st.session_state.balance, step=1000, value=1000)
